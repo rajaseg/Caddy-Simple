@@ -42,3 +42,14 @@ gh
 -----END PUBLIC KEY-----
 ```
 then the ```PUBLIC_KEY``` would be ```abcdefgh```.
+
+### SPF
+Similar to ```DKIM```, setting up ```SPF``` is highly recommended. Add a ```TXT Record``` for ```example.com.``` with the value:
+
+```v=spf1 mx -all```
+
+### DMARC
+Setting up ```DMARC``` is also recommended. Add a ```TXT Record``` for ```_dmarc.example.com.``` with the following value
+```v=DMARC1; p=quarantine; adkim=r; aspf=r```
+
+This is a ```relaxed``` DMARC policy. You can also use a more strict policy with ```v=DMARC1; p=reject; adkim=s; aspf=s``` value.
