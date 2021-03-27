@@ -28,8 +28,8 @@ Set up ```DKIM``` by adding a ```TXT Record``` for ```dkim._domainkey.example.co
 
 with ```PUBLIC_KEY``` being your ```dkim.pub.key``` but
 
-1. remove the ```-----BEGIN PUBLIC KEY-----``` and ```-----END PUBLIC KEY-----```
-2. join all the lines on a single line
+- Remove the ```-----BEGIN PUBLIC KEY-----``` and ```-----END PUBLIC KEY-----```
+- Join all the lines on a single line
 
 For example, if your ```dkim.pub.key``` is
 
