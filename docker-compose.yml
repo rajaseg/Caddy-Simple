@@ -1,0 +1,99 @@
+version: "3.7"
+
+services:
+  sl-caddy:
+    image: caddy:alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - sl
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - ./caddydata:/data
+      - ./caddyconfig:/config
+      - ./caddylogs:/var/log/caddy
+      - ./sl:/sl
+   
+  sl-postfix:
+    image: arugifa/simplelogin-postfix
+    restart: unless-stopped
+    networks:
+      - sl
+    environment:
+      - ALIASES_DEFAULT_DOMAIN=dialtohome.com
+      - DB_HOST=sl-postgres:5432
+      - DB_USER=postgres
+      - DB_PASSWORD=somethingspecialhere
+      - DB_NAME=simplelogin
+      - LETSENCRYPT_EMAIL=itsraj@outlook.com
+      - EMAIL_HANDLER_HOST=sl-email
+   
+  sut:
+    image: alpine:latest
+    networks:
+      - sl
+    # Wait for Postfix to start:
+    command: >
+      sh -c 'for i in 1 2 3 4 5 6; do echo QUIT|nc sl-postfix 25|grep "220 .* ESMTP Postfix" && break || if [ "$$i" != 6 ]; then sleep 10  ; else exit 1 ; fi; done'
+    depends_on:
+      - sl-postfix
+   
+  sl-postgres:
+    image: postgres:alpine
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    networks:
+      - sl
+    volumes:
+      - ./sldb:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_PASSWORD=somethingspecialhere
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=simplelogin
+
+  sl-app:
+    image: simplelogin/app:3.2.2
+    restart: unless-stopped
+    depends_on:
+      - sl-postgres
+    ports:
+      - "7777:7777"
+    networks:
+      - sl
+    volumes:
+      - ./sl:/sl
+      - ./slupload:/code/static/upload
+      - ./simplelogin.env:/code/.env
+      - ./dkim.key:/dkim.key
+      - ./dkim.pub.key:/dkim.pub.key
+
+  sl-email:
+    image: simplelogin/app:3.2.2
+    restart: unless-stopped
+    depends_on:
+      - sl-postgres
+    command: ["python", "email_handler.py"]
+    ports:
+      - "20381:20381"
+    networks:
+      - sl
+    volumes:
+      - ./sl:/sl
+      - ./slupload:/code/static/upload
+      - ./simplelogin.env:/code/.env
+      - ./dkim.key:/dkim.key
+      - ./dkim.pub.key:/dkim.pub.key
+volumes:
+  sl:
+  sldb:
+  slupload:
+  slpgp:
+  caddydata:
+  caddyconfig:
+  caddylogs:
+networks:
+  sl:
+    driver: bridge
