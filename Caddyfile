@@ -1,0 +1,27 @@
+{
+    email you@example.com
+    cert_issuer acme
+    acme_ca https://acme-v02.api.letsencrypt.org/directory
+    servers {
+        protocol {
+            experimental_http3
+            allow_h2c
+        }
+        max_header_size 16384
+    }
+}
+
+app.example.com {
+    log {
+        output file /var/log/caddy/dial.log {
+            roll_size 20mb
+            roll_keep 2
+            roll_keep_for 6h
+        }
+        format console
+        level error
+    }
+    root * /sl
+    reverse_proxy sl-app:7777
+    encode gzip
+}
